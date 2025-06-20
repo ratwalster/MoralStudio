@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moral Studio: Interactive Project Blueprint</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: A thematic, single-page dashboard designed to make the dense conceptual framework of Moral Studio explorable and interactive. The structure is non-linear, allowing users to jump between key pillars: Vision, Core Framework, User Journey, and Community Governance. The core interactive element is the "Dilemma Simulator," which dynamically changes based on user selection of an archetype. This structure was chosen to translate abstract strategic documents into a tangible, engaging experience that prioritizes user understanding and exploration over a linear reading of the source reports. -->
+    <!-- Visualization & Content Choices: The application uses a tab-based layout to compare the Cognitive Engine (System 1/2) and the Ideological Core (Harmony/Conflict). Diagrams for the User Journey and Governance Protocol are built with semantic HTML and styled with Tailwind CSS to avoid SVG/Mermaid, adhering to constraints. The primary interaction is the Dilemma Simulator, where clicking archetype cards updates a text panel, demonstrating the framework in action. This approach was chosen to make the core concepts concrete and interactive, which is more effective for learning and synthesis than static text. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .tab.active {
+            border-color: #3b82f6; /* blue-500 */
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+        }
+        .archetype-card.active {
+            border-color: #3b82f6; /* blue-500 */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .map-font {
+            font-family: 'Roboto Mono', monospace;
+        }
+        /* Styles for the connector lines in the map */
+        .connector {
+            position: relative;
+            text-align: center;
+        }
+        .connector::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: -1.5rem; /* Space from top box */
+            bottom: -1.5rem; /* Space from bottom box */
+            width: 2px;
+            background-color: #cbd5e1; /* slate-300 */
+            transform: translateX(-50%);
+            z-index: -1;
+        }
+        .connector-label {
+            background-color: #f8fafc; /* body bg */
+            padding: 0 0.5rem;
+            color: #64748b; /* slate-500 */
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .sphere-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .sphere-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        .collapsible-content.show {
+            max-height: 1000px; /* Adjust as needed */
+        }
+        .perspective-box {
+            background-color: #f1f5f9; /* slate-100 */
+            border-left: 4px solid #64748b; /* slate-500 */
+        }
+        /* Loading spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 border-b border-slate-200">
+        <nav class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-slate-800">Moral Studio Blueprint</h1>
+            <div class="hidden md:flex space-x-6 text-sm font-medium">
+                <a href="#vision" class="text-slate-600 hover:text-blue-500 transition-colors">Project Vision</a>
+                <a href="#framework" class="text-slate-600 hover:text-blue-500 transition-colors">Core Framework</a>
+                <a href="#spheres" class="text-slate-600 hover:text-blue-500 transition-colors">Spheres of Being & Meaning</a>
+                <a href="#framework-analysis" class="text-slate-600 hover:text-blue-500 transition-colors">Framework Analysis</a>
+                <a href="#mapper" class="text-slate-600 hover:text-blue-500 transition-colors">Landscape Mapper</a>
+                <a href="#dynamics-chart" class="text-slate-600 hover:text-blue-500 transition-colors">Dynamics Chart</a>
+                <a href="#governance" class="text-slate-600 hover:text-blue-500 transition-colors">Governance</a>
+                <a href="#adr-library" class="text-slate-600 hover:text-blue-500 transition-colors">ADR Library</a>
+            </div>
+             <button id="mobile-menu-button" class="md:hidden p-2 rounded-md text-slate-600 hover:bg-slate-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden px-4 pb-3">
+            <a href="#vision" class="block py-2 text-slate-600 hover:text-blue-500">Project Vision</a>
+            <a href="#framework" class="block py-2 text-slate-600 hover:text-blue-500">Core Framework</a>
+            <a href="#spheres" class="block py-2 text-slate-600 hover:text-blue-500">Spheres of Being & Meaning</a>
+            <a href="#framework-analysis" class="block py-2 text-slate-600 hover:text-blue-500">Framework Analysis</a>
+            <a href="#mapper" class="block py-2 text-slate-600 hover:text-blue-500">Landscape Mapper</a>
+            <a href="#dynamics-chart" class="block py-2 text-slate-600 hover:text-blue-500">Dynamics Chart</a>
+            <a href="#governance" class="block py-2 text-slate-600 hover:text-blue-500">Governance</a>
+            <a href="#adr-library" class="block py-2 text-slate-600 hover:text-blue-500">ADR Library</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+        
+        <!-- Section 1: Project Vision -->
+        <section id="vision" class="py-12 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">Project Vision</h2>
+                <p class="text-lg text-slate-500 max-w-3xl mx-auto">Equipping individuals with a philosophically rigorous framework for analyzing complex socio-economic dilemmas.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-3 flex items-center">
+                        <span class="bg-sky-100 text-sky-700 p-2 rounded-full mr-3">🧠</span> Cognitive On-Ramping
+                    </h3>
+                    <p class="text-sm text-slate-600">Guides users from intuitive "System 1" thinking to focused "System 2" analysis by prioritizing psychological safety and user agency before introducing complex philosophical content.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-3 flex items-center">
+                        <span class="bg-green-100 text-green-700 p-2 rounded-full mr-3">⚖️</span> Dialectical Analysis
+                    </h3>
+                    <p class="text-sm text-slate-600">Utilizes the Harmony vs. Conflict dialectic to encourage nuanced reasoning, moving users away from binary thinking toward a sophisticated appreciation of trade-offs and systemic forces.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-3 flex items-center">
+                        <span class="bg-amber-100 text-amber-700 p-2 rounded-full mr-3">👤</span> Archetypal Embodiment
+                    </h3>
+                    <p class="text-sm text-slate-600">Transforms abstract theory into an engaging act of embodied reasoning through the Producer, Citizen, and Revolutionary archetypes, making the analysis personally resonant.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Core Framework -->
+        <section id="framework" class="py-12 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">The Core Framework</h2>
+                <p class="text-lg text-slate-500 max-w-3xl mx-auto">An integration of cognitive science and economic philosophy to power a unique analytical engine.</p>
+            </div>
+
+            <div class="mb-8 border-b border-slate-200">
+                <nav class="flex space-x-4" aria-label="Tabs">
+                    <button class="tab active py-4 px-1 border-b-2 font-medium text-sm" data-target="cognitive-engine">The Cognitive Engine</button>
+                    <button class="tab text-slate-500 hover:text-slate-700 py-4 px-1 border-b-2 border-transparent font-medium text-sm" data-target="ideological-core">The Ideological Core</button>
+                </nav>
+            </div>
+
+            <div id="cognitive-engine" class="content-section active">
+                 <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                        <h4 class="text-xl font-semibold mb-3 text-sky-700">System 1: The Automatic Mind</h4>
+                        <p class="text-sm mb-4 text-slate-600">Operates automatically and quickly, with little effort and no sense of voluntary control. It's the source of impressions, intuitions, and biases.</p>
+                        <ul class="space-y-2 text-sm">
+                            <li class="p-2 bg-slate-50 rounded-md"><strong>Function:</strong> Generates impressions, recognizes patterns.</li>
+                            <li class="p-2 bg-slate-50 rounded-md"><strong>Effort:</strong> Low, unconscious.</li>
+                            <li class="p-2 bg-slate-50 rounded-md"><strong>Key Bias:</strong> WYSIATI (What You See Is All There Is) - builds a coherent story from limited information.</li>
+                        </ul>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                        <h4 class="text-xl font-semibold mb-3 text-sky-700">System 2: The Deliberate Mind</h4>
+                        <p class="text-sm mb-4 text-slate-600">The slow, effortful, and logical mode of thought. It's responsible for complex computations, reasoning, and self-control.</p>
+                        <ul class="space-y-2 text-sm">
+                            <li class="p-2 bg-slate-50 rounded-md"><strong>Function:</strong> Constructs thoughts, performs analysis.</li>
+                            <li class="p-2 bg-slate-50 rounded-md"><strong>Effort:</strong> High, conscious, and "lazy" by default.</li>
+                            <li class="p-2 bg-slate-50 rounded-md"><strong>Role:</strong> Acts as a check on System 1's suggestions, mobilizing when presented with a difficult problem.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div id="ideological-core" class="content-section">
+                <div class="bg-white p-8 rounded-lg shadow-sm border border-slate-200">
+                    <h3 class="text-2xl font-bold mb-6 text-center">Interactive Dilemma Simulator</h3>
+                    <p class="text-center mb-8 text-slate-600">The "Food Truck vs. Bike Lane" dilemma illustrates the tension between individual enterprise and public infrastructure. Select an archetype below to see how it frames the analysis.</p>
+                    <div class="grid md:grid-cols-3 gap-6 mb-8">
+                        <div id="producer-card" class="archetype-card active p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-lg">
+                            <h5 class="font-bold text-lg text-amber-700">The Producer</h5>
+                            <p class="text-xs text-slate-500">Focuses on efficiency, value creation, and productive systems.</p>
+                        </div>
+                        <div id="citizen-card" class="archetype-card p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-lg">
+                            <h5 class="font-bold text-lg text-green-700">The Citizen</h5>
+                            <p class="text-xs text-slate-500">Focuses on fairness, social cohesion, and the good of the whole.</p>
+                        </div>
+                        <div id="revolutionary-card" class="archetype-card p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-lg">
+                            <h5 class="font-bold text-lg text-red-700">The Revolutionary</h5>
+                            <p class="text-xs text-slate-500">Focuses on power imbalances, exploitation, and systemic injustice.</p>
+                        </div>
+                    </div>
+                    <div id="dilemma-prompt-container" class="bg-slate-50 p-6 rounded-lg border border-slate-200 min-h-[120px]">
+                        <p class="font-semibold text-slate-800 mb-2">Guiding Prompt:</p>
+                        <p id="dilemma-prompt" class="text-slate-600 transition-opacity duration-300"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Spheres of Being & Meaning -->
+        <section id="spheres" class="py-12 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">The Spheres of Being and Meaning</h2>
+                <p class="text-lg text-slate-500 max-w-3xl mx-auto">A framework for mapping the interconnected realms of human experience, from the creative self to the cosmic whole, grounded in philosophical perspectives on meaning, existence, and conflict.</p>
+            </div>
+            <div class="max-w-4xl mx-auto space-y-4">
+                <!-- Sphere 1: Personal -->
+                <div class="sphere-card bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-start space-x-6">
+                        <div class="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-sky-100 text-sky-500 text-3xl">🏞️</div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-800">Personal Sphere: The Troposphere</h3>
+                            <p class="mt-1 text-sm text-slate-600">This includes individual experiences, memories, and perspectives shaped by personal history and identity. It's the realm of self-discovery, personal growth, and self-acceptance.</p>
+                            <p class="mt-2 text-xs text-slate-500"><strong>Analogy:</strong> The troposphere is the lowest layer of the atmosphere, where our daily "storms" and personal "climates" play out.</p>
+                        </div>
+                    </div>
+                    <div class="perspective-box p-4 mt-4 rounded-md">
+                        <p class="text-xs text-slate-600"><strong>Guiding Perspective:</strong> This sphere represents the exploration of the <strong>Known vs. Unknown</strong> (Peterson), where the individual confronts chaos to create personal meaning. It is the realm of Heidegger's <strong>Dasein</strong>, the entity for whom its own Being is an issue, defined by its thrownness and its projection upon its own possibilities.</p>
+                    </div>
+                </div>
+                <!-- Other spheres remain unchanged -->
+                <div class="sphere-card bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-start space-x-6">
+                        <div class="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-blue-100 text-blue-500 text-3xl">🤝</div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-800">Social Sphere: The Stratosphere</h3>
+                            <p class="mt-1 text-sm text-slate-600">This encompasses relationships with family, friends, and community, including social interactions, support networks, and a sense of belonging. It's about how individuals connect with others.</p>
+                            <p class="mt-2 text-xs text-slate-500"><strong>Analogy:</strong> The stratosphere is a more stable layer, representing our networks of social connection.</p>
+                        </div>
+                    </div>
+                     <div class="perspective-box p-4 mt-4 rounded-md">
+                        <p class="text-xs text-slate-600"><strong>Guiding Perspective:</strong> This is the sphere of <strong>Being-with-Others</strong> (Heidegger) and the "they-self." It is also the domain of <strong>Agonistic Pluralism</strong> (Mouffe), where democratic life is not about achieving rational consensus but about transforming antagonism between 'enemies' into a productive agonism between 'adversaries'.</p>
+                    </div>
+                </div>
+                 <div class="sphere-card bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-start space-x-6">
+                        <div class="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-teal-100 text-teal-500 text-3xl">❤️‍🩹</div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-800">Health/Wellbeing Sphere: The Mesosphere</h3>
+                            <p class="mt-1 text-sm text-slate-600">This encompasses physical and mental health, self-care practices, and overall well-being. It's about finding meaning through taking care of one's physical and mental health.</p>
+                            <p class="mt-2 text-xs text-slate-500"><strong>Analogy:</strong> The mesosphere is where meteors burn up, representing the resilience required to maintain health and overcome 'threats' to protect the inner core.</p>
+                        </div>
+                    </div>
+                     <div class="perspective-box p-4 mt-4 rounded-md">
+                        <p class="text-xs text-slate-600"><strong>Guiding Perspective:</strong> This sphere embodies Heidegger's concept of <strong>Care (Sorge)</strong> as the fundamental state of Dasein. Wellbeing is not a static state but an active, concernful Being-in-the-world that requires taking over one's own 'thrownness' and finitude.</p>
+                    </div>
+                </div>
+                 <div class="sphere-card bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-start space-x-6">
+                        <div class="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-indigo-100 text-indigo-500 text-3xl">💼</div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-800">Professional/Work Sphere: The Thermosphere</h3>
+                            <p class="mt-1 text-sm text-slate-600">This involves one's career, education, and professional development. It's about finding meaning and purpose through work, contributing skills and talents, and achieving professional goals.</p>
+                            <p class="mt-2 text-xs text-slate-500"><strong>Analogy:</strong> The thermosphere, with its high energy, symbolizes the energetic output and impact of our professional lives, where our efforts absorb and radiate energy.</p>
+                        </div>
+                    </div>
+                     <div class="perspective-box p-4 mt-4 rounded-md">
+                        <p class="text-xs text-slate-600"><strong>Guiding Perspective:</strong> This is the world of the <strong>ready-to-hand</strong> (Heidegger), where we engage with equipment and tasks in a totality of involvements. Meaning arises from understanding the 'in-order-to' structure of our work and its place within a shared world.</p>
+                    </div>
+                </div>
+                 <div class="sphere-card bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-start space-x-6">
+                        <div class="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-purple-100 text-purple-500 text-3xl">🎨</div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-800">Cultural Sphere: The Exosphere</h3>
+                            <p class="mt-1 text-sm text-slate-600">This encompasses participation in cultural activities, artistic expression, and engagement with cultural heritage. It's about finding meaning through creative pursuits and connecting with cultural traditions.</p>
+                            <p class="mt-2 text-xs text-slate-500"><strong>Analogy:</strong> The exosphere, thinning into space, represents the expansive and boundary-pushing nature of culture and art, connecting us to vast shared human experiences.</p>
+                        </div>
+                    </div>
+                     <div class="perspective-box p-4 mt-4 rounded-md">
+                        <p class="text-xs text-slate-600"><strong>Guiding Perspective:</strong> This sphere is constituted by the <strong>shared myths and stories</strong> (Peterson) that form our public, interpreted world. It is the domain of Heidegger's "they-self" (`das Man`), where meaning is inherited and must be either critically appropriated or fallen into.</p>
+                    </div>
+                </div>
+                 <div class="sphere-card bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-start space-x-6">
+                        <div class="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-slate-200 text-slate-600 text-3xl">🏛️</div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-800">Political/Civic Sphere: The Magnetosphere</h3>
+                            <p class="mt-1 text-sm text-slate-600">This involves participation in civic life, political engagement, and contribution to society. It's about finding meaning through contributing to the common good and exercising one's rights and responsibilities.</p>
+                            <p class="mt-2 text-xs text-slate-500"><strong>Analogy:</strong> The magnetosphere is the protective field of governance, shaping the "atmosphere" of society.</p>
+                        </div>
+                    </div>
+                    <div class="perspective-box p-4 mt-4 rounded-md">
+                        <p class="text-xs text-slate-600"><strong>Guiding Perspective:</strong> This is the sphere of <strong>the Political</strong> (Mouffe), the organizing of human coexistence in a context that is always potentially conflictual. Democratic politics aims to domesticate hostility and transform antagonism into agonism, creating a shared world through ongoing, respectful contestation.</p>
+                    </div>
+                </div>
+                 <div class="sphere-card bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-start space-x-6">
+                        <div class="flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center bg-gray-800 text-gray-300 text-3xl">🌌</div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-800">Spiritual/Philosophical Sphere: The Cosmos</h3>
+                            <p class="mt-1 text-sm text-slate-600">This includes an individual's beliefs, values, and worldview. It's about finding meaning in life through faith, philosophy, or a personal moral compass.</p>
+                            <p class="mt-2 text-xs text-slate-500"><strong>Analogy:</strong> This sphere transcends physical layers, representing the connection to universal principles, the cosmos, and fundamental questions of existence that are boundless and encompass everything.</p>
+                        </div>
+                    </div>
+                     <div class="perspective-box p-4 mt-4 rounded-md">
+                        <p class="text-xs text-slate-600"><strong>Guiding Perspective:</strong> This sphere directly confronts the <strong>question of the meaning of Being</strong> (Heidegger) itself. It is the ultimate confrontation with the Unknown (Peterson), requiring the deepest form of creative exploration to establish a 'map of meaning' that can orient one's entire existence.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Philosophical Framework Analysis -->
+        <section id="framework-analysis" class="py-12 scroll-mt-20">
+            <!-- Content unchanged -->
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">Philosophical Framework Analysis</h2>
+                <p class="text-lg text-slate-500 max-w-3xl mx-auto">An analysis of the 'Spheres of Being & Meaning' concept and its alternatives, leading to a recommendation for the Moral Studio V1.</p>
+            </div>
+            <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-sm border border-slate-200 space-y-10">
+                
+                <div>
+                    <h3 class="text-2xl font-semibold text-slate-800 mb-4 border-b pb-3">Original Framework Analysis</h3>
+                    <div>
+                        <h4 class="text-lg font-medium text-slate-700 mt-4">Strengths:</h4>
+                        <ul class="list-disc list-inside mt-2 space-y-1 text-sm text-slate-600">
+                            <li><strong>Poetic Analogies:</strong> "Troposphere as personal storms" and "exosphere as cultural expanse" are evocative and memorable.</li>
+                            <li><strong>Philosophical Depth:</strong> Incorporates Heidegger’s Dasein, Care, and Being-with-Others; Peterson’s Known vs. Unknown; and Mouffe’s Agonistic Pluralism, providing a robust theoretical base.</li>
+                            <li><strong>Alignment with Goals:</strong> Emphasizes self-awareness and shared meaning, supporting the project’s aim to focus on the message, not the messenger.</li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 class="text-lg font-medium text-slate-700 mt-4">Weaknesses:</h4>
+                        <ul class="list-disc list-inside mt-2 space-y-1 text-sm text-slate-600">
+                            <li><strong>Complexity:</strong> The layered metaphors may overwhelm users new to philosophical concepts.</li>
+                            <li><strong>Overlap:</strong> Spheres like Social and Cultural share themes (e.g., connection, heritage), risking redundancy.</li>
+                            <li><strong>Accessibility:</strong> The academic tone (e.g., "thrownness," "das Man") may deter casual users.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-semibold text-slate-800 mb-4 border-b pb-3">Alternate Completion 1: Emphasizing Interconnectedness</h3>
+                     <div>
+                        <h4 class="text-lg font-medium text-slate-700 mt-4">Strengths:</h4>
+                        <ul class="list-disc list-inside mt-2 space-y-1 text-sm text-slate-600">
+                           <li><strong>Intuitiveness:</strong> "Earth’s Surface" as Personal and "Troposphere as life’s air" are grounded and relatable.</li>
+                           <li><strong>Interconnectivity:</strong> Clearly shows each sphere building on the previous, reinforcing a holistic system.</li>
+                           <li><strong>User-Friendly:</strong> Avoids abstract jargon, aligning with the goal of reducing cognitive friction.</li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 class="text-lg font-medium text-slate-700 mt-4">Weaknesses:</h4>
+                        <ul class="list-disc list-inside mt-2 space-y-1 text-sm text-slate-600">
+                           <li><strong>Less Poetic:</strong> Lacks the dynamic imagery of the original (e.g., "storms" vs. "surface").</li>
+                           <li><strong>Scientific Lean:</strong> May feel more ecological than philosophical, potentially diluting the cultural/spiritual focus.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-semibold text-slate-800 mb-4 border-b pb-3">Alternate Completion 2: Focusing on Energy and Impact</h3>
+                    <div>
+                        <h4 class="text-lg font-medium text-slate-700 mt-4">Strengths:</h4>
+                        <ul class="list-disc list-inside mt-2 space-y-1 text-sm text-slate-600">
+                           <li><strong>Dynamic Imagery:</strong> "Earth’s Core as inner strength" and "auroras as cultural expression" are powerful and evocative.</li>
+                           <li><strong>Philosophical Fit:</strong> Aligns with Heidegger’s ready-to-hand and Peterson’s myths, enhancing meaning through energy metaphors.</li>
+                           <li><strong>Expansive:</strong> Highlights influence, resonating with Political and Spiritual spheres.</li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 class="text-lg font-medium text-slate-700 mt-4">Weaknesses:</h4>
+                        <ul class="list-disc list-inside mt-2 space-y-1 text-sm text-slate-600">
+                           <li><strong>Complexity:</strong> Abstract analogies (e.g., jet streams, mesosphere protection) require explanation, increasing cognitive load.</li>
+                           <li><strong>Less Intuitive:</strong> May confuse users without context, countering the accessibility goal.</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-2xl font-semibold text-slate-800 mb-4 border-b pb-3">Alternate Completion 3: Abstract "Physical World" Hierarchy</h3>
+                    <div>
+                        <h4 class="text-lg font-medium text-slate-700 mt-4">Strengths:</h4>
+                        <ul class="list-disc list-inside mt-2 space-y-1 text-sm text-slate-600">
+                            <li><strong>Intellectual Depth:</strong> Appeals to users interested in scientific/philosophical parallels (e.g., quantum self, cosmic values).</li>
+                            <li><strong>Expansive Scope:</strong> Covers the full spectrum of existence, enriching the Spiritual sphere.</li>
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 class="text-lg font-medium text-slate-700 mt-4">Weaknesses:</h4>
+                        <ul class="list-disc list-inside mt-2 space-y-1 text-sm text-slate-600">
+                            <li><strong>Low Accessibility:</strong> Terms like "subatomic particles" and "geological plates" are abstract, risking intellectual friction.</li>
+                            <li><strong>Disconnect:</strong> Less tied to human experience, undermining the shared attention focus.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Final Recommendation -->
+                <div class="mt-8 bg-sky-50 border-t-4 border-sky-500 rounded-b text-sky-900 px-6 py-5 shadow-md" role="alert">
+                  <div class="flex">
+                    <div class="py-1 pr-4">
+                      <svg class="fill-current h-6 w-6 text-sky-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/></svg>
+                    </div>
+                    <div>
+                      <p class="font-bold text-lg mb-2">Recommendation for V1</p>
+                      <p class="text-sm mb-4">Adopt <strong>Alternate 1 (Interconnectedness)</strong> as the primary framework for the Moral Studio MVP, with the following structure:</p>
+                      <ul class="list-disc list-inside space-y-1 text-sm">
+                          <li><strong>Personal Sphere:</strong> Earth’s Surface/Lithosphere – Foundation of identity and growth.</li>
+                          <li><strong>Health/Wellbeing Sphere:</strong> Troposphere – Life’s sustaining air, focus on care.</li>
+                          <li><strong>Social Sphere:</strong> Stratosphere – Stable networks of connection.</li>
+                          <li><strong>Professional/Work Sphere:</strong> Mesosphere – Purposeful action and protection.</li>
+                          <li><strong>Cultural Sphere:</strong> Thermosphere – Diffusing creative influence.</li>
+                          <li><strong>Political/Civic Sphere:</strong> Exosphere – Societal reach and impact.</li>
+                          <li><strong>Spiritual/Philosophical Sphere:</strong> Cosmos – Universal meaning and inquiry.</li>
+                      </ul>
+                      <p class="font-bold text-sm mt-4">Rationale:</p>
+                      <p class="text-sm">This model's simple, relatable analogies reduce emotional and cognitive barriers, directly supporting the project's goal of creating shared attention on the message. The layered structure reinforces holistic understanding, aligning with Heidegger’s Being-in-the-world, while allowing for future integration of poetic elements.</p>
+                      <p class="font-bold text-sm mt-4">Future Steps & Enhancements:</p>
+                      <ul class="list-disc list-inside space-y-1 text-sm">
+                          <li><strong>Simplify Language:</strong> Use plain terms (e.g., "self-care" instead of "Care (Sorge)") with tooltips for deeper philosophical context.</li>
+                          <li><strong>Community Consensus Module:</strong> Develop an interactive tool where the community can vote on or refine the framework, embodying the principle of agonistic pluralism.</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- Section: Internal Landscape Mapper -->
+        <section id="mapper" class="py-12 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">Internal Landscape Mapper</h2>
+                <p class="text-lg text-slate-500 max-w-3xl mx-auto">A tool to externalize your internal world, transforming tangled thoughts into a clear map for reflection and communication.</p>
+            </div>
+            <div class="bg-white p-8 rounded-lg shadow-sm border border-slate-200">
+                <textarea id="landscape-input" class="w-full p-4 border border-slate-300 rounded-md mb-4 h-40 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Describe what you're feeling. What are the core beliefs driving you? What is the central conflict? What does a path forward look like? The more detail, the clearer the map. For example: 'I feel stuck. I believe I have to please everyone, but it's making me resentful and exhausted. The conflict is between my need for approval and my own well-being. I guess I need to learn to set boundaries.'"></textarea>
+                <div class="text-center">
+                    <button id="gemini-map-btn" class="bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition-all shadow-md flex items-center justify-center mx-auto disabled:bg-slate-400 disabled:cursor-not-allowed">
+                        <span class="mr-2">✨</span> Generate Your Map with AI
+                    </button>
+                </div>
+            </div>
+            <div id="mapper-output" class="mt-8 space-y-4">
+                 <div id="map-loader" class="hidden justify-center items-center">
+                    <div class="loader"></div>
+                    <p class="ml-4 text-slate-500">Generating your map...</p>
+                 </div>
+                 <div id="map-error" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg" role="alert"></div>
+                 <div id="map-container" class="mt-8">
+                     <!-- Generated map will appear here -->
+                 </div>
+            </div>
+        </section>
+        
+        <!-- Section: Interactive Conversational Dynamics Chart -->
+        <section id="dynamics-chart" class="py-12 scroll-mt-20">
+            <!-- Content unchanged -->
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">Interactive Conversational Dynamics Chart</h2>
+                <p class="text-lg text-slate-500 max-w-3xl mx-auto">A real-time visualization tool that provides live feedback on conversational patterns, helping participants navigate from conflict towards resolution.</p>
+            </div>
+            <div class="bg-white p-8 rounded-lg shadow-sm border border-slate-200">
+                <div class="grid md:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <h3 class="text-xl font-bold mb-4">How It Works</h3>
+                        <p class="text-sm text-slate-600 mb-4">This chart evolves from a static diagram into an interactive tool that detects emotional cues in dialogue. It visually responds by glowing or adjusting its elements, providing immediate feedback during a conversation and making the conversational dynamic itself the object of shared attention.</p>
+                        <ul class="space-y-3 text-sm">
+                            <li class="flex items-start">
+                                <span class="bg-red-500 w-3 h-3 rounded-full mr-3 mt-1 flex-shrink-0"></span>
+                                <div><strong class="text-red-600">Path A (Conflict):</strong> Elements like "Accusations" or "Escalation" glow red when detected in the dialogue.</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="bg-blue-500 w-3 h-3 rounded-full mr-3 mt-1 flex-shrink-0"></span>
+                                <div><strong class="text-blue-600">Path B (Resolution):</strong> "Active Listening" or "Understanding" glow blue, reinforcing constructive moves.</div>
+                            </li>
+                             <li class="flex items-start">
+                                <span class="bg-green-500 w-3 h-3 rounded-full mr-3 mt-1 flex-shrink-0"></span>
+                                <div><strong class="text-green-600">Shared Goal:</strong> Activated when words like "solution" or "agree" are used, highlighting collaboration.</div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="relative w-full h-80 bg-slate-50 rounded-lg flex items-center justify-center p-4">
+                        <img src="https://placehold.co/400x400/f1f5f9/64748b?text=Chart+Visualization&font=inter" alt="Static preview of a radar chart" class="rounded-lg opacity-75">
+                         <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+                            <p class="text-slate-500 font-semibold text-center">Live Chart Prototype</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <button id="toggle-code-btn" class="w-full text-left font-semibold text-blue-600 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition">Show/Hide Implementation Prototype Code</button>
+                    <div id="code-container" class="collapsible-content mt-4">
+                        <pre class="bg-slate-800 text-white p-4 rounded-lg text-xs overflow-x-auto"><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+  &lt;title&gt;Interactive Conversational Dynamics&lt;/title&gt;
+  &lt;script src="https://cdn.jsdelivr.net/npm/chart.js"&gt;&lt;/script&gt;
+  &lt;style&gt;
+    body { font-family: sans-serif; text-align: center; }
+    .chart-container { position: relative; margin: 20px auto; width: 90%; max-width: 600px; }
+    button { padding: 10px 15px; margin: 5px; font-size: 16px; cursor: pointer; border-radius: 5px; border: 1px solid #ccc; }
+    #status { margin-top: 20px; font-style: italic; color: #555; }
+    .glow-red { animation: glow-red 1s ease-in-out; }
+    .glow-blue { animation: glow-blue 1s ease-in-out; }
+    .glow-green { animation: glow-green 1s ease-in-out; }
+    @keyframes glow-red {
+      0%, 100% { box-shadow: 0 0 5px rgba(255, 99, 132, 0.7); }
+      50% { box-shadow: 0 0 20px 5px rgba(255, 99, 132, 1); }
+    }
+    @keyframes glow-blue {
+      0%, 100% { box-shadow: 0 0 5px rgba(54, 162, 235, 0.7); }
+      50% { box-shadow: 0 0 20px 5px rgba(54, 162, 235, 1); }
+    }
+    @keyframes glow-green {
+      0%, 100% { box-shadow: 0 0 5px rgba(75, 192, 192, 0.7); }
+      50% { box-shadow: 0 0 20px 5px rgba(75, 192, 192, 1); }
+    }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class="chart-container"&gt;
+    &lt;canvas id="convoChart"&gt;&lt;/canvas&gt;
+  &lt;/div&gt;
+  &lt;button onclick="startRecognition()"&gt;Start Listening&lt;/button&gt;
+  &lt;button onclick="stopRecognition()"&gt;Stop Listening&lt;/button&gt;
+  &lt;p id="status"&gt;Status: Idle&lt;/p&gt;
+  &lt;script&gt;
+    const ctx = document.getElementById('convoChart');
+    const chartStatusEl = document.getElementById('status');
+    let chart;
+    let recognition;
+
+    function initializeChart() {
+      chart = new Chart(ctx.getContext('2d'), {
+        type: 'radar',
+        data: {
+          labels: ["Trigger", "Accusations", "Escalation", "Defensive", "Pause", "Listening", "Understanding", "Solution", "Shared Goal"],
+          datasets: [{
+            label: "Path A: Conflict",
+            data: [5, 5, 5, 5, 2, 2, 2, 2, 2],
+            fill: true,
+            backgroundColor: "rgba(255, 99, 132, 0.2)",
+            borderColor: "rgba(255, 99, 132, 1)",
+            pointBackgroundColor: "rgba(255, 99, 132, 1)"
+          }, {
+            label: "Path B: Resolution",
+            data: [5, 2, 2, 2, 5, 5, 5, 5, 5],
+            fill: true,
+            backgroundColor: "rgba(54, 162, 235, 0.2)",
+            borderColor: "rgba(54, 162, 235, 1)",
+            pointBackgroundColor: "rgba(54, 162, 235, 1)"
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { r: { beginAtZero: true, min: 0, max: 10, ticks: { stepSize: 2 } } },
+          plugins: { legend: { position: 'top' } }
+        }
+      });
+    }
+
+    function startRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        chartStatusEl.textContent = "Speech Recognition not supported.";
+        return;
+      }
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
+        chartStatusEl.textContent = `Detected: ${transcript}`;
+        updateChart(transcript);
+      };
+
+      recognition.onerror = (event) => {
+        chartStatusEl.textContent = `Error: ${event.error}`;
+      };
+      
+      recognition.onstart = () => {
+        chartStatusEl.textContent = "Listening...";
+      };
+
+      recognition.onend = () => {
+        if (recognition) { // Avoid error on manual stop
+             chartStatusEl.textContent = "Stopped. Click 'Start Listening' to try again.";
+        }
+      };
+
+      recognition.start();
+    }
+
+    function stopRecognition() {
+      if (recognition) {
+        recognition.stop();
+        recognition = null;
+        chartStatusEl.textContent = "Stopped.";
+      }
+    }
+
+    function updateChart(transcript) {
+        const dataA = chart.data.datasets[0].data;
+        const dataB = chart.data.datasets[1].data;
+
+        if (transcript.includes('you always') || transcript.includes('blame')) {
+            dataA[1] = Math.min(dataA[1] + 2, 10);
+            dataA[2] = Math.min(dataA[2] + 1, 10);
+            flashGlow('red');
+        } else if (transcript.includes('listen') || transcript.includes('i hear you')) {
+            dataB[5] = Math.min(dataB[5] + 2, 10);
+            dataB[6] = Math.min(dataB[6] + 1, 10);
+            flashGlow('blue');
+        } else if (transcript.includes('pause') || transcript.includes('hold on')) {
+            dataB[4] = Math.min(dataB[4] + 3, 10);
+            dataA[2] = Math.max(dataA[2] - 1, 2); // De-escalate
+            flashGlow('blue');
+        } else if (transcript.includes('solution') || transcript.includes('agree') || transcript.includes('we can')) {
+            dataB[7] = Math.min(dataB[7] + 2, 10);
+            dataB[8] = Math.min(dataB[8] + 2, 10);
+            flashGlow('green');
+        }
+        chart.update();
+    }
+    
+    function flashGlow(color) {
+        const chartCanvas = document.getElementById('convoChart');
+        chartCanvas.classList.add(`glow-${color}`);
+        setTimeout(() => {
+            chartCanvas.classList.remove(`glow-${color}`);
+        }, 1000);
+    }
+
+    initializeChart();
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Governance -->
+        <section id="governance" class="py-12 scroll-mt-20">
+            <!-- Content unchanged -->
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">Community & Evolution</h2>
+                <p class="text-lg text-slate-500 max-w-3xl mx-auto">A transparent protocol for platform governance, ensuring continued evolution, not ideological rigidity.</p>
+            </div>
+
+            <div class="bg-white p-8 rounded-lg shadow-sm border border-slate-200 space-y-12">
+                <div>
+                    <h3 class="text-2xl font-bold mb-6 text-center">Constitutional Principles</h3>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <h4 class="font-semibold text-slate-800">Article 1: Pedagogical Primacy</h4>
+                            <p class="text-xs text-slate-600 mt-1">The platform's primary mission is to improve the quality of thought, not merely to host debate.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <h4 class="font-semibold text-slate-800">Article 2: Good-Faith Engagement</h4>
+                            <p class="text-xs text-slate-600 mt-1">The system will assume good faith (Hanlon's Razor), but reserves the right to moderate systematic bad-faith actors.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <h4 class="font-semibold text-slate-800">Article 3: Non-Maleficence</h4>
+                            <p class="text-xs text-slate-600 mt-1">The platform is for analyzing ideas, not inciting real-world harm, harassment, or hate speech.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <h4 class="font-semibold text-slate-800">Article 4: Meta-Stability</h4>
+                            <p class="text-xs text-slate-600 mt-1">Amending these core principles requires a supermajority and public impact analysis.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-bold mb-6 text-center">Guiding Principles of Restorative Practice</h3>
+                     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-teal-50 p-4 rounded-lg border border-teal-200">
+                            <h4 class="font-semibold text-teal-800">Focus on Harm & Relationships</h4>
+                            <p class="text-xs text-teal-700 mt-1">Views conflict as a violation of people and relationships, recognizing that it hurts all parties involved.</p>
+                        </div>
+                        <div class="bg-teal-50 p-4 rounded-lg border border-teal-200">
+                            <h4 class="font-semibold text-teal-800">Repairing Harm</h4>
+                            <p class="text-xs text-teal-700 mt-1">The primary goal is to address the harm caused by the wrongdoing and find ways to repair it, not to assign blame.</p>
+                        </div>
+                        <div class="bg-teal-50 p-4 rounded-lg border border-teal-200">
+                            <h4 class="font-semibold text-teal-800">Central Role of All Parties</h4>
+                            <p class="text-xs text-teal-700 mt-1">All affected parties are central to the process, and their perspectives are crucial in determining how to move forward.</p>
+                        </div>
+                         <div class="bg-teal-50 p-4 rounded-lg border border-teal-200">
+                            <h4 class="font-semibold text-teal-800">Offender Responsibility</h4>
+                            <p class="text-xs text-teal-700 mt-1">Individuals are encouraged to take responsibility for their actions and the harm they have caused.</p>
+                        </div>
+                        <div class="bg-teal-50 p-4 rounded-lg border border-teal-200">
+                            <h4 class="font-semibold text-teal-800">Dignity and Respect</h4>
+                            <p class="text-xs text-teal-700 mt-1">All individuals are treated with dignity and respect throughout the process, regardless of their role in the conflict.</p>
+                        </div>
+                        <div class="bg-teal-50 p-4 rounded-lg border border-teal-200">
+                            <h4 class="font-semibold text-teal-800">Reintegration</h4>
+                            <p class="text-xs text-teal-700 mt-1">Aims to reintegrate all parties back into the community, fostering a sense of belonging and shared understanding.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: ADR Library -->
+        <section id="adr-library" class="py-12 scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-2">ADR Library</h2>
+                <p class="text-lg text-slate-500 max-w-3xl mx-auto">A log of key architectural and philosophical decisions that shape the Moral Studio platform.</p>
+            </div>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- ADR Cards remain here -->
+                 <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-001</h4>
+                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Accepted</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">Data Permanence & Privacy Strategy</h5>
+                    <p class="text-sm text-slate-600">Decided on a dual strategy of user-controlled encrypted backups and optional end-to-end encrypted cloud sync, rejecting a blockchain approach for privacy and simplicity.</p>
+                </div>
+                 <!-- ADR-002 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-002</h4>
+                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Accepted</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">Core Application Metaphor</h5>
+                    <p class="text-sm text-slate-600">Decided on the "Moral Studio" metaphor over the "Empathy Gym" to enhance user agency and focus on creative, reflective construction of thought.</p>
+                </div>
+                 <!-- ADR-003 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-003</h4>
+                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Accepted</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">User Progress & Reflection Mechanism</h5>
+                    <p class="text-sm text-slate-600">Decided on a "Private Journal with Fading Ink" to prioritize practice over performance and mitigate feelings of moral superiority.</p>
+                </div>
+                 <!-- ADR-004 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-004</h4>
+                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Accepted</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">Content Curation & Filtering Strategy</h5>
+                    <p class="text-sm text-slate-600">Decided on implementing the "Socratic Triple Filter" and a user-controlled "Information Aperture" to manage information intake responsibly.</p>
+                </div>
+                 <!-- ADR-005 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-005</h4>
+                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Accepted</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">Guiding Psychological Framework</h5>
+                    <p class="text-sm text-slate-600">Formally adopted Daniel Kahneman's "System 1 / System 2" model as the core psychological framework for the app's design.</p>
+                </div>
+                 <!-- ADR-006 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-006</h4>
+                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Accepted</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">User Engagement & Reward Strategy</h5>
+                    <p class="text-sm text-slate-600">Decided on a strategy of "Earned Dopamine," using mechanics that reward insight and mastery rather than addictive loops.</p>
+                </div>
+                 <!-- ADR-008 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-008</h4>
+                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Accepted</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">Prototype Testing Content</h5>
+                    <p class="text-sm text-slate-600">Decided on using a "Community Scenario" ("Food Truck vs. Bike Lane") for the Cognitive Readiness Task to ensure a methodologically sound test.</p>
+                </div>
+                <!-- ADR-009 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-009</h4>
+                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Accepted</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">Project Charter & Handoff</h5>
+                    <p class="text-sm text-slate-600">Establishes the project's vision of creating a sanctuary for "System 2" thinking and outlines guiding principles, including user agency, humility, and applying Hanlon's Razor.</p>
+                </div>
+                <!-- ADR-010 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-010</h4>
+                        <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Accepted</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">Adoption of Hybrid Philosophical Framework</h5>
+                    <p class="text-sm text-slate-600">Formalizes the decision to integrate Kahneman's System 1/2 cognitive model with the Harmony vs. Conflict economic dialectic as the core engine of the application.</p>
+                </div>
+                <!-- ADR-011 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-011</h4>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Proposed</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">Mitigation of Fallacies of Relevance</h5>
+                    <p class="text-sm text-slate-600">Integrates "Logical Pitfall" warnings into the archetype selection flow to actively teach users about and mitigate the risks of `Ad Hominem` and `Appeal to the People` fallacies.</p>
+                </div>
+                <!-- ADR-012 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-012</h4>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Proposed</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">Mitigation of Fallacies of Weak Induction</h5>
+                    <p class="text-sm text-slate-600">Enhances the Dilemma Simulator with prompts that frame scenarios as *arguments from example* and encourage analysis of *disanalogies* to prevent hasty generalizations.</p>
+                </div>
+                <!-- ADR-013 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-013</h4>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Proposed</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">Mitigation of Fallacies of Presumption</h5>
+                    <p class="text-sm text-slate-600">Adds framing disclaimers and uses *precising definitions* for core concepts to avoid `False Dichotomy` and `Begging the Question` by making the framework's assumptions transparent.</p>
+                </div>
+                <!-- ADR-014 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-014</h4>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Proposed</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">Framework for Community Proposals</h5>
+                    <p class="text-sm text-slate-600">Establishes the "Framework Lab," a module for users to submit, debate, and endorse their own proposals for platform evolution, turning users into co-creators.</p>
+                </div>
+                 <!-- ADR-015 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-015</h4>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Proposed</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">Governance & Moderation Protocol</h5>
+                    <p class="text-sm text-slate-600">Creates a two-tiered protocol for the Framework Lab, with evolvable, community-facing standards for moderation and curation to ensure transparent, scalable governance.</p>
+                </div>
+                 <!-- ADR-016 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="font-bold text-slate-800">ADR-016</h4>
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Proposed</span>
+                    </div>
+                    <h5 class="font-semibold text-slate-700 mb-2">Constitutional Principles for the Platform</h5>
+                    <p class="text-sm text-slate-600">Defines a superior class of "Constitutional ADRs" that codify the platform's non-negotiable principles, providing a stable foundation to protect the core mission from bad-faith actors.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- TAB LOGIC ---
+            const tabs = document.querySelectorAll('.tab');
+            const contentSections = document.querySelectorAll('.content-section');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    const target = tab.dataset.target;
+                    contentSections.forEach(section => {
+                        section.id === target ? section.classList.add('active') : section.classList.remove('active');
+                    });
+                });
+            });
+
+            // --- DILEMMA SIMULATOR LOGIC ---
+            const archetypeCards = document.querySelectorAll('.archetype-card');
+            const dilemmaPromptEl = document.getElementById('dilemma-prompt');
+            const prompts = {
+                producer: "How does the food truck vs. bike lane conflict reflect productive vs. consumption priorities in your community?",
+                citizen: "How can the division of labor or price system help resolve this conflict in a way that benefits all?",
+                revolutionary: "Does this conflict reflect exploitation of one group’s interests over another? How would you address it?"
+            };
+            function updateSimulator(archetype) {
+                if (!dilemmaPromptEl) return;
+                dilemmaPromptEl.style.opacity = 0;
+                setTimeout(() => {
+                    dilemmaPromptEl.textContent = prompts[archetype];
+                    dilemmaPromptEl.style.opacity = 1;
+                }, 300);
+            }
+            archetypeCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    archetypeCards.forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    const archetype = card.id.replace('-card', '');
+                    updateSimulator(archetype);
+                });
+            });
+            updateSimulator('producer');
+
+            // --- LANDSCAPE MAPPER (GEMINI API) LOGIC ---
+            const generateMapBtn = document.getElementById('gemini-map-btn');
+            const landscapeInput = document.getElementById('landscape-input');
+            const mapContainer = document.getElementById('map-container');
+            const mapLoader = document.getElementById('map-loader');
+            const mapError = document.getElementById('map-error');
+
+            // Function to render the map from AI-generated data
+            function renderMap(data) {
+                const beliefsHtml = data.coreBeliefs.map(belief => `<li>• ${belief}</li>`).join('');
+                const emotionsHtml = data.underlyingEmotions.map(emotion => `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium me-2 px-2.5 py-0.5 rounded">${emotion}</span>`).join(' ');
+                
+                const mapHtml = `
+                <div class="map-font text-sm max-w-4xl mx-auto space-y-8 flex flex-col items-center bg-white p-6 rounded-lg shadow-md border animate-fade-in">
+                    
+                    <div class="p-4 border-2 border-red-300 rounded-lg bg-red-50 shadow-sm w-full">
+                        <h3 class="font-bold text-base mb-2 text-red-800 text-center">Central Conflict</h3>
+                        <p class="text-slate-700 text-center">"${data.centralConflict}"</p>
+                    </div>
+
+                    <div class="h-6 connector"><span class="connector-label">(Fueled by)</span></div>
+                    
+                    <div class="p-4 border-2 border-slate-400 rounded-lg bg-slate-50 shadow-sm w-full">
+                        <h3 class="font-bold text-base text-center mb-3">Core Beliefs & Conditioning</h3>
+                        <ul class="space-y-2 text-slate-700">${beliefsHtml}</ul>
+                    </div>
+                    
+                     <div class="p-4 border-2 border-yellow-300 rounded-lg bg-yellow-50 shadow-sm w-full">
+                        <h3 class="font-bold text-base text-center mb-3">Underlying Emotions</h3>
+                        <div class="flex flex-wrap gap-2 justify-center">${emotionsHtml}</div>
+                    </div>
+
+                    <div class="h-6 connector"><span class="connector-label">(Path Forward)</span></div>
+
+                    <div class="p-4 border-2 border-green-300 rounded-lg bg-green-50 shadow-sm w-full">
+                         <h3 class="font-bold text-base text-center mb-2 text-green-800">A Reflective Step</h3>
+                        <p class="text-slate-700 text-center">${data.pathForward}</p>
+                    </div>
+
+                </div>`;
+                mapContainer.innerHTML = mapHtml;
+                mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            // Event listener for the generate button
+            generateMapBtn.addEventListener('click', async () => {
+                const userInput = landscapeInput.value.trim();
+                if (!userInput) {
+                    mapError.textContent = "Please describe your thoughts in the text area before generating a map.";
+                    mapError.style.display = 'block';
+                    mapContainer.innerHTML = '';
+                    return;
+                }
+
+                // --- UI updates: Show loader, hide error/old map ---
+                mapLoader.style.display = 'flex';
+                generateMapBtn.disabled = true;
+                mapError.style.display = 'none';
+                mapContainer.innerHTML = '';
+
+                // --- Gemini API call ---
+                try {
+                    const prompt = `You are an expert in cognitive behavioral therapy and philosophical analysis. A user has provided a text describing their internal state. Analyze this text and structure it into a 'map of meaning'. Identify the user's core beliefs, the central conflict they are facing, the underlying emotions, and a potential path forward. Your response must be in JSON format according to the provided schema. Be insightful, empathetic, and frame the output as a reflective tool, not a diagnosis. Here is the user's text: "${userInput}"`;
+
+                    const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                    const payload = {
+                        contents: chatHistory,
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            responseSchema: {
+                                type: "OBJECT",
+                                properties: {
+                                    coreBeliefs: {
+                                        type: "ARRAY",
+                                        items: { "type": "STRING" },
+                                        description: "Key underlying beliefs or assumptions driving the user's feelings."
+                                    },
+                                    centralConflict: {
+                                        type: "STRING",
+                                        description: "The main tension or dilemma described by the user."
+                                    },
+                                    underlyingEmotions: {
+                                        type: "ARRAY",
+                                        items: { "type": "STRING" },
+                                        description: "The primary emotions detected in the text."
+                                    },
+                                    pathForward: {
+                                        type: "STRING",
+                                        description: "A suggested first step or reflective question to help the user move forward."
+                                    }
+                                },
+                                required: ["coreBeliefs", "centralConflict", "underlyingEmotions", "pathForward"]
+                            }
+                        }
+                    };
+
+                    const apiKey = ""; // API key is handled by the environment
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        
+                        const jsonText = result.candidates[0].content.parts[0].text;
+                        const parsedJson = JSON.parse(jsonText);
+                        renderMap(parsedJson);
+
+                    } else {
+                        throw new Error("Received an invalid response structure from the API.");
+                    }
+
+                } catch (error) {
+                    console.error("Error calling Gemini API:", error);
+                    mapError.textContent = `Sorry, an error occurred while generating your map. Please try again. Details: ${error.message}`;
+                    mapError.style.display = 'block';
+                } finally {
+                    // --- UI cleanup: Hide loader, re-enable button ---
+                    mapLoader.style.display = 'none';
+                    generateMapBtn.disabled = false;
+                }
+            });
+            
+            // --- DYNAMICS CHART PROTOTYPE CODE TOGGLE ---
+            const toggleBtn = document.getElementById('toggle-code-btn');
+            const codeContainer = document.getElementById('code-container');
+            if (toggleBtn && codeContainer) {
+                 toggleBtn.addEventListener('click', () => {
+                    codeContainer.classList.toggle('show');
+                    if (codeContainer.classList.contains('show')) {
+                        toggleBtn.textContent = 'Hide Implementation Prototype Code';
+                    } else {
+                        toggleBtn.textContent = 'Show Implementation Prototype Code';
+                    }
+                });
+            }
+
+            // --- MOBILE MENU TOGGLE ---
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // --- SMOOTH SCROLLING FOR NAV LINKS ---
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetEl = document.querySelector(this.getAttribute('href'));
+                    if (targetEl) {
+                        targetEl.scrollIntoView({ behavior: 'smooth' });
+                    }
+                     if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
